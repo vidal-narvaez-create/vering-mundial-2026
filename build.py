@@ -27,49 +27,53 @@ NAME={
 MONTHS={'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
         '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'}
 
-# Offset UTC de cada ciudad sede (hora estandar de verano)
-# Paraguay = UTC-4, entonces py_hour = utc_hour - 4
+# Offset UTC con horario de VERANO (DST) - junio 2026
+# Paraguay = UTC-4
+# EDT (Eastern Daylight) = UTC-4
+# CDT (Central Daylight)  = UTC-5
+# MDT (Mountain Daylight) = UTC-6
+# PDT (Pacific Daylight)  = UTC-7
+# Mexico (CDT)            = UTC-5
 CITY_UTC_OFFSET = {
-    # Pacific Time (UTC-7 en verano)
+    # Pacific Daylight Time (UTC-7)
     'lumen field':            -7,
     'sofi stadium':           -7,
     "levi's stadium":         -7,
     'bc place':               -7,
-    # Central Time (UTC-6 en verano / UTC-5 en invierno - junio = verano)
-    'at&t stadium':           -6,
-    'arrowhead stadium':      -6,
-    'nrg stadium':            -6,
-    'azteca stadium':         -6,
-    'estadio akron':          -6,
-    'estadio bbva':           -6,
-    # Eastern Time (UTC-5 en verano / UTC-4 en invierno - junio = verano)
-    'mercedes-benz stadium':  -5,
-    'hard rock stadium':      -5,
-    'gillette stadium':       -5,
-    'metlife stadium':        -5,
-    'lincoln financial field':-5,
-    'bmo field':              -5,
-    # Paraguay = UTC-4
+    # Central Daylight Time (UTC-5) - Mexico y ciudades del centro USA
+    'at&t stadium':           -5,
+    'arrowhead stadium':      -5,
+    'nrg stadium':            -5,
+    'azteca stadium':         -5,
+    'estadio akron':          -5,
+    'estadio bbva':           -5,
+    # Eastern Daylight Time (UTC-4) - igual que Paraguay
+    'mercedes-benz stadium':  -4,
+    'hard rock stadium':      -4,
+    'gillette stadium':       -4,
+    'metlife stadium':        -4,
+    'lincoln financial field':-4,
+    'bmo field':              -4,
 }
 
-# Mapeo ciudad display -> offset UTC
+# Mapeo ciudad display -> offset UTC (DST junio 2026)
 CITY_DISPLAY_OFFSET = {
-    'Seattle':                          -7,
-    'Los Angeles (Inglewood)':          -7,
+    'Seattle':                              -7,
+    'Los Angeles (Inglewood)':              -7,
     'San Francisco Bay Area (Santa Clara)': -7,
-    'Vancouver':                        -7,
-    'Dallas (Arlington)':               -6,
-    'Kansas City':                      -6,
-    'Houston':                          -6,
-    'Mexico City':                      -6,
-    'Guadalajara (Zapopan)':            -6,
-    'Monterrey (Guadalupe)':            -6,
-    'Atlanta':                          -5,
-    'Miami (Miami Gardens)':            -5,
-    'Boston (Foxborough)':              -5,
-    'New York/New Jersey (East Rutherford)': -5,
-    'Philadelphia':                     -5,
-    'Toronto':                          -5,
+    'Vancouver':                            -7,
+    'Dallas (Arlington)':                   -5,
+    'Kansas City':                          -5,
+    'Houston':                              -5,
+    'Mexico City':                          -5,
+    'Guadalajara (Zapopan)':                -5,
+    'Monterrey (Guadalupe)':                -5,
+    'Atlanta':                              -4,
+    'Miami (Miami Gardens)':                -4,
+    'Boston (Foxborough)':                  -4,
+    'New York/New Jersey (East Rutherford)':-4,
+    'Philadelphia':                         -4,
+    'Toronto':                              -4,
 }
 
 PY_OFFSET = -4  # Paraguay UTC-4
@@ -241,3 +245,4 @@ with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(result)
 
 print(f'\nListo! {jugados} jugados · horas en formato PY (UTC-4) · dist/index.html generado')
+
