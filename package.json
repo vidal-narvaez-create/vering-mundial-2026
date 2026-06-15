@@ -1,0 +1,12 @@
+{
+  "name": "vering-mundial-2026",
+  "version": "1.0.0",
+  "description": "Fixture Mundial 2026",
+  "main": "update.js",
+  "scripts": {
+    "update": "node update.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.9"
+  }
+}
