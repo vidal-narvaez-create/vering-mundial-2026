@@ -46,7 +46,18 @@ html += '<div class="header"><h1>VERING</h1><p>FIXTURE - MUNDIAL 2026</p></div>'
 html += '<div class="stats"><div class="stat"><div class="num">'+str(len(out))+'</div><div class="label">Partidos</div></div><div class="stat"><div class="num">'+str(jugados)+'</div><div class="label">Jugados</div></div><div class="stat"><div class="num">48</div><div class="label">Selecciones</div></div><div class="stat"><div class="num">12</div><div class="label">Grupos A-L</div></div></div>'
 html += '<h2>PARTIDOS</h2><div class="matches">'+rows+'</div></body></html>'
 
+import re
+groups = {}
+for m in out:
+    g = m['g']
+    if g not in groups: groups[g] = []
+    if m['a'] not in groups[g]: groups[g].append(m['a'])
+    if m['b'] not in groups[g]: groups[g].append(m['b'])
+with open('template.html', encoding='utf-8') as f:
+    tmpl = f.read()
+DATA = 'const REAL_MATCHES = '+json.dumps(out, ensure_ascii=False)+';\nconst REAL_GROUPS = '+json.dumps(groups, ensure_ascii=False)+';'
+result = re.sub(r'const REAL_MATCHES = \[\];\nconst REAL_GROUPS = \{\};', DATA, tmpl)
 os.makedirs('dist', exist_ok=True)
 with open('dist/index.html', 'w', encoding='utf-8') as f:
-    f.write(html)
-print('Listo: '+str(len(out))+' partidos, '+str(jugados)+' jugados')
+    f.write(result)
+print('Listo con template!')
