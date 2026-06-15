@@ -1,32 +1,29 @@
-name: Update Fixture Mundial 2026
+name: Actualizar VERING Mundial 2026
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 14 * * *'
   workflow_dispatch:
 
 jobs:
-  update:
+  update-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '18'
+          python-version: '3.11'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Generar HTML
+        run: python3 build.py
 
-      - name: Run update script
-        run: node update.js
-
-      - name: Commit and push changes
+      - name: Deploy a Netlify
+        env:
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'actions@github.com'
-          git add .
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update fixture data"
-          git push
+          npm install -g netlify-cli
+          netlify deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=$NETLIFY_SITE_ID
