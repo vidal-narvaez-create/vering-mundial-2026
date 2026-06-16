@@ -27,30 +27,6 @@ NAME={
 MONTHS={'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
         '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'}
 
-# Paraguay en junio = UTC-3
-PY_OFFSET = -3
-
-# Offset UTC de cada ciudad con horario de verano DST junio 2026
-# PDT = UTC-7, CDT = UTC-5, EDT = UTC-4
-CITY_DISPLAY_OFFSET = {
-    'Seattle':                              -7,
-    'Los Angeles (Inglewood)':              -7,
-    'San Francisco Bay Area (Santa Clara)': -7,
-    'Vancouver':                            -7,
-    'Dallas (Arlington)':                   -5,
-    'Kansas City':                          -5,
-    'Houston':                              -5,
-    'Mexico City':                          -5,
-    'Guadalajara (Zapopan)':                -5,
-    'Monterrey (Guadalupe)':                -5,
-    'Atlanta':                              -4,
-    'Miami (Miami Gardens)':                -4,
-    'Boston (Foxborough)':                  -4,
-    'New York/New Jersey (East Rutherford)':-4,
-    'Philadelphia':                         -4,
-    'Toronto':                              -4,
-}
-
 def es(n):
     return NAME.get(n, n)
 
@@ -88,19 +64,14 @@ def fCity(ground):
     return ground
 
 def fT_py(time_str, city_display):
+    # El JSON trae hora base, sumar +2 da hora Paraguay
     if not time_str:
         return ''
     try:
         parts = time_str.split(':')
         local_h = int(parts[0])
         local_m = int(parts[1][:2]) if len(parts) > 1 else 0
-        city_offset = CITY_DISPLAY_OFFSET.get(city_display, -5)
-        utc_h = local_h - city_offset
-        py_h  = utc_h + PY_OFFSET
-        if py_h >= 24:
-            py_h -= 24
-        elif py_h < 0:
-            py_h += 24
+        py_h = (local_h + 2) % 24
         return f"{py_h:02d}:{local_m:02d}"
     except Exception:
         return time_str
@@ -139,7 +110,7 @@ for i, m in enumerate(matches):
 jugados = sum(1 for m in out if m['ga'] is not None)
 print(f"Partidos jugados: {jugados} de {len(out)}")
 
-print("\nVerificacion de horas (hora PY):")
+print("\nVerificacion de horas (+2 hora PY):")
 for m in out[:5]:
     print(f"  {m['a']} vs {m['b']} | {m['city']} | {m['time']} hs PY")
 
@@ -174,5 +145,5 @@ os.makedirs('dist', exist_ok=True)
 with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(result)
 
-print(f'\nListo! {jugados} jugados · hora PY (UTC-3) · dist/index.html generado')
+print(f'\nListo! {jugados} jugados · hora PY (+2) · dist/index.html generado')
 
