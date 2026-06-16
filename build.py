@@ -27,36 +27,11 @@ NAME={
 MONTHS={'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
         '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'}
 
-# Offset UTC con horario de VERANO (DST) - junio 2026
-PY_OFFSET = -3  # Paraguay UTC-3 (junio 2026)
-# EDT (Eastern Daylight) = UTC-4
-# CDT (Central Daylight)  = UTC-5
-# MDT (Mountain Daylight) = UTC-6
-# PDT (Pacific Daylight)  = UTC-7
-# Mexico (CDT)            = UTC-5
-CITY_UTC_OFFSET = {
-    # Pacific Daylight Time (UTC-7)
-    'lumen field':            -7,
-    'sofi stadium':           -7,
-    "levi's stadium":         -7,
-    'bc place':               -7,
-    # Central Daylight Time (UTC-5) - Mexico y ciudades del centro USA
-    'at&t stadium':           -5,
-    'arrowhead stadium':      -5,
-    'nrg stadium':            -5,
-    'azteca stadium':         -5,
-    'estadio akron':          -5,
-    'estadio bbva':           -5,
-    # Eastern Daylight Time (UTC-4) - igual que Paraguay
-    'mercedes-benz stadium':  -4,
-    'hard rock stadium':      -4,
-    'gillette stadium':       -4,
-    'metlife stadium':        -4,
-    'lincoln financial field':-4,
-    'bmo field':              -4,
-}
+# Paraguay en junio = UTC-3
+PY_OFFSET = -3
 
-# Mapeo ciudad display -> offset UTC (DST junio 2026)
+# Offset UTC de cada ciudad con horario de verano DST junio 2026
+# PDT = UTC-7, CDT = UTC-5, EDT = UTC-4
 CITY_DISPLAY_OFFSET = {
     'Seattle':                              -7,
     'Los Angeles (Inglewood)':              -7,
@@ -76,8 +51,6 @@ CITY_DISPLAY_OFFSET = {
     'Toronto':                              -4,
 }
 
-PY_OFFSET = -4  # Paraguay UTC-4
-
 def es(n):
     return NAME.get(n, n)
 
@@ -87,43 +60,7 @@ def fD(s):
     p = s.split('-')
     return str(int(p[2])) + ' ' + MONTHS.get(p[1], p[1])
 
-def fT_py(time_str, ground):
-    """Convierte hora local del estadio a hora Paraguay (UTC-4)"""
-    if not time_str:
-        return ''
-    try:
-        parts = time_str.split(':')
-        local_h = int(parts[0])
-        local_m = int(parts[1][:2]) if len(parts) > 1 else 0
-
-        # Buscar offset de la ciudad
-        city_offset = None
-        ground_lower = (ground or '').lower()
-        for key, off in CITY_UTC_OFFSET.items():
-            if key in ground_lower:
-                city_offset = off
-                break
-
-        if city_offset is None:
-            # Fallback: asumir Central Time (UTC-6) para sedes mexicanas
-            city_offset = -6
-
-        # Convertir: local -> UTC -> Paraguay
-        utc_h = local_h - city_offset   # hora_local - offset_negativo = UTC
-        py_h  = utc_h + PY_OFFSET       # UTC - 4 = PY
-
-        # Ajustar si pasa medianoche
-        if py_h >= 24:
-            py_h -= 24
-        elif py_h < 0:
-            py_h += 24
-
-        return f"{py_h:02d}:{local_m:02d}"
-    except Exception:
-        return time_str
-
 def fCity(ground):
-    """Convierte nombre de estadio a ciudad display"""
     if not ground:
         return ''
     g = ground.lower()
@@ -148,27 +85,22 @@ def fCity(ground):
     for key, city in city_map.items():
         if key in g:
             return city
-    return ground  # fallback: nombre del estadio
+    return ground
 
-def fT_py_from_city(time_str, city_display):
-    """Convierte hora local del estadio a hora PY usando ciudad display"""
+def fT_py(time_str, city_display):
     if not time_str:
         return ''
     try:
         parts = time_str.split(':')
         local_h = int(parts[0])
         local_m = int(parts[1][:2]) if len(parts) > 1 else 0
-
-        city_offset = CITY_DISPLAY_OFFSET.get(city_display, -6)
-
+        city_offset = CITY_DISPLAY_OFFSET.get(city_display, -5)
         utc_h = local_h - city_offset
         py_h  = utc_h + PY_OFFSET
-
         if py_h >= 24:
             py_h -= 24
         elif py_h < 0:
             py_h += 24
-
         return f"{py_h:02d}:{local_m:02d}"
     except Exception:
         return time_str
@@ -186,7 +118,7 @@ for i, m in enumerate(matches):
     ground   = m.get('ground', '')
     city     = fCity(ground)
     time_raw = m.get('time', '')
-    time_py  = fT_py_from_city(time_raw, city)
+    time_py  = fT_py(time_raw, city)
 
     out.append({
         'id':       i,
@@ -207,8 +139,7 @@ for i, m in enumerate(matches):
 jugados = sum(1 for m in out if m['ga'] is not None)
 print(f"Partidos jugados: {jugados} de {len(out)}")
 
-# Verificacion de algunas horas
-print("\nVerificacion de horas (deben ser hora PY):")
+print("\nVerificacion de horas (hora PY):")
 for m in out[:5]:
     print(f"  {m['a']} vs {m['b']} | {m['city']} | {m['time']} hs PY")
 
@@ -233,7 +164,6 @@ result = re.sub(
     DATA, tmpl, flags=re.DOTALL
 )
 
-# Inyectar numero de jugados en splash
 result = re.sub(
     r'(<div class="sp-kv" id="spJug"[^>]*>)\d+(</div>)',
     r'\g<1>' + str(jugados) + r'\2',
@@ -244,5 +174,5 @@ os.makedirs('dist', exist_ok=True)
 with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(result)
 
-print(f'\nListo! {jugados} jugados · horas en formato PY (UTC-4) · dist/index.html generado')
+print(f'\nListo! {jugados} jugados · hora PY (UTC-3) · dist/index.html generado')
 
