@@ -24,7 +24,4 @@ jobs:
       - name: Deploy a Netlify
         env:
           NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        run: |
-          npm install -g netlify-cli
-          netlify deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=a6fe657d-d003-4e22-a624-b579f0541d08
+        run: npx --yes netlify-cli deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=a6fe657d-d003-4e22-a624-b579f0541d08
