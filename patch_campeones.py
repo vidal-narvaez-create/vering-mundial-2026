@@ -13,9 +13,7 @@ if not os.path.exists(SRC):
 with open(SRC, encoding='utf-8') as f:
     html = f.read()
 
-# ─────────────────────────────────────────────
-# 1. CSS: insertar antes del cierre </style>
-# ─────────────────────────────────────────────
+# CSS
 CSS = """
 /* CAMPEONES */
 .champ-body{padding:20px;max-width:900px;margin:0 auto}
@@ -57,6 +55,7 @@ CSS = """
 .goal-hist-num{font-size:22px;font-weight:900;color:#0B369D;line-height:1}
 .goal-hist-lbl{font-size:9px;color:var(--vm);font-weight:700}
 .era-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;margin-left:4px}
+.live-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;margin-left:4px;background:#e8f5e9;color:#2e7d32;animation:pulse 2s infinite}
 @media(max-width:700px){.champ-body{padding:12px}}
 """
 
@@ -66,28 +65,20 @@ else:
     html = html.replace('</style>', CSS + '</style>', 1)
     print("CSS agregado OK")
 
-# ─────────────────────────────────────────────
-# 2. NAV TAB: agregar antes de Alertas
-# ─────────────────────────────────────────────
-OLD_NAV = "onclick=\"showPage('alertas',this)\">&#x1F514; Alertas</button>"
-NEW_NAV  = "onclick=\"showPage('campeones',this)\">&#x1F3C5; Campeones</button>\n      <button class=\"nav-tab\" onclick=\"showPage('alertas',this)\">&#x1F514; Alertas</button>"
-
-# Try multiple variants since emoji rendering varies
+# NAV TAB
+nav_patched = False
 nav_variants = [
     ("onclick=\"showPage('alertas',this)\">🔔 Alertas</button>",
      "onclick=\"showPage('campeones',this)\">🏅 Campeones</button>\n      <button class=\"nav-tab\" onclick=\"showPage('alertas',this)\">🔔 Alertas</button>"),
 ]
-
-nav_patched = False
 for old, new in nav_variants:
     if old in html:
         html = html.replace(old, new, 1)
         nav_patched = True
-        print("Nav tab agregado OK (emoji variant)")
+        print("Nav tab agregado OK")
         break
 
 if not nav_patched:
-    # Try with regex
     m = re.search(r"onclick=\"showPage\('alertas',this\)\">.*?Alertas</button>", html)
     if m:
         old_text = m.group(0)
@@ -96,20 +87,18 @@ if not nav_patched:
         nav_patched = True
         print("Nav tab agregado OK (regex)")
     else:
-        print("WARNING: Nav tab no encontrado - revisar manualmente")
+        print("WARNING: Nav tab no encontrado")
 
-# ─────────────────────────────────────────────
-# 3. PAGE HTML: insertar antes de page-alertas
-# ─────────────────────────────────────────────
+# PAGE HTML
 CHAMP_PAGE = """
   <!-- CAMPEONES -->
   <div id="page-campeones" class="page">
     <div class="champ-body">
       <div class="champ-hero">
-        <div><h2>Historia del Mundial</h2><p>Campeones &middot; Goleadores &middot; R&eacute;cords &middot; 1930&ndash;2022</p></div>
+        <div><h2>Historia del Mundial</h2><p>Campeones &middot; Goleadores &middot; R&eacute;cords &middot; 1930&ndash;2026</p></div>
         <div class="champ-stats">
           <div class="champ-stat"><span>22</span><small>MUNDIALES</small></div>
-          <div class="champ-stat"><span>2548</span><small>GOLES</small></div>
+          <div class="champ-stat"><span id="champTotalGoles">2548</span><small>GOLES HIST.</small></div>
         </div>
       </div>
       <div class="champ-subtabs">
@@ -129,9 +118,13 @@ CHAMP_PAGE = """
         <div id="champList"></div>
       </div>
       <div id="champ-tab-goleadores" style="display:none">
+        <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1565c0;font-weight:700">
+          &#x1F504; Los goles del Mundial 2026 se actualizan autom&aacute;ticamente con cada partido
+        </div>
         <div class="champ-filters" id="goalFilters">
           <button class="champ-fbtn active" onclick="filterGoalHist('todos',this)">Todos</button>
-          <button class="champ-fbtn" onclick="filterGoalHist('moderno',this)">2000+</button>
+          <button class="champ-fbtn" onclick="filterGoalHist('2026',this)">&#x1F534; 2026 en vivo</button>
+          <button class="champ-fbtn" onclick="filterGoalHist('moderno',this)">2000-2022</button>
           <button class="champ-fbtn" onclick="filterGoalHist('clasico',this)">1990s</button>
           <button class="champ-fbtn" onclick="filterGoalHist('historico',this)">Cl&aacute;sicos</button>
         </div>
@@ -158,20 +151,17 @@ CHAMP_PAGE = """
 if 'id="page-campeones"' in html:
     print("Page campeones ya existe, saltando.")
 else:
-    # Find page-alertas and insert before it
     m = re.search(r'(\s*<!-- ALERTAS -->)', html)
     if m:
         html = html[:m.start()] + CHAMP_PAGE + html[m.start():]
         print("Page campeones agregado OK")
     else:
-        print("WARNING: <!-- ALERTAS --> no encontrado - revisar manualmente")
+        print("WARNING: <!-- ALERTAS --> no encontrado")
 
-# ─────────────────────────────────────────────
-# 4. JS DATA + FUNCTIONS: insertar antes de </script> final
-# ─────────────────────────────────────────────
+# JS - version actualizada con goles 2026 dinamicos
 CHAMP_JS = """
 // ============================================================
-// CAMPEONES HISTORICOS
+// CAMPEONES HISTORICOS + GOLEADORES 2026 DINAMICOS
 // ============================================================
 const HIST_CHAMPS=[
   {y:2022,c:'Argentina',f:['#74ACDF','#fff','#74ACDF'],d:'h',h:'Qatar',fin:'Argentina 3-3 Francia (pen)'},
@@ -198,7 +188,8 @@ const HIST_CHAMPS=[
   {y:1930,c:'Uruguay',f:['#fff','#5bcfed','#0038A8'],d:'h',h:'Uruguay',fin:'Uruguay 4-2 Argentina'},
 ];
 
-const HIST_GOALS=[
+// Goleadores historicos 1930-2022
+const HIST_GOALS_BASE=[
   {name:'Miroslav Klose',team:'Alemania',f:['#000','#DD0000','#FFCE00'],d:'h',goles:16,años:'2002-2014',era:'moderno',av:'#0B369D'},
   {name:'Ronaldo',team:'Brasil',f:['#009C3B','#FDEF42','#009C3B'],d:'h',goles:15,años:'1998-2006',era:'moderno',av:'#009C3B'},
   {name:'Gerd Müller',team:'Alemania',f:['#000','#DD0000','#FFCE00'],d:'h',goles:14,años:'1970-1974',era:'historico',av:'#c8922a'},
@@ -213,6 +204,8 @@ const HIST_GOALS=[
   {name:'Teófilo Cubillas',team:'Perú',f:['#D91023','#fff','#D91023'],d:'v',goles:10,años:'1970-1978',era:'historico',av:'#D91023'},
   {name:'Grzegorz Lato',team:'Polonia',f:['#fff','#DC143C','#fff'],d:'h',goles:10,años:'1974-1982',era:'historico',av:'#DC143C'},
   {name:'Cristiano Ronaldo',team:'Portugal',f:['#006600','#FF0000','#FF0000'],d:'v',goles:8,años:'2006-2022',era:'moderno',av:'#E53935'},
+  {name:'Eusébio',team:'Portugal',f:['#006600','#FF0000','#FF0000'],d:'v',goles:9,años:'1966',era:'historico',av:'#8B0000'},
+  {name:'Helmut Rahn',team:'Alemania',f:['#000','#DD0000','#FFCE00'],d:'h',goles:10,años:'1954-1958',era:'historico',av:'#555'},
 ];
 
 const HIST_RECORDS=[
@@ -231,6 +224,58 @@ function FH(f,d,w,h){
   return '<span class="champ-flag" style="width:'+w+'px;height:'+h+'px;flex-direction:'+dir+'">'+f.map(function(c){return'<span style="flex:1;background:'+c+'"></span>';}).join('')+'</span>';
 }
 
+// Construir goleadores 2026 desde WC_MATCHES
+function build2026Goals(){
+  var map={};
+  WC_MATCHES.forEach(function(m){
+    if(m.ga===null) return;
+    m.goals1.forEach(function(g){
+      if(!map[g.name]) map[g.name]={name:g.name,team:m.a,goles:0,minutes:[]};
+      map[g.name].goles++;
+      map[g.name].minutes.push(g.minute);
+    });
+    m.goals2.forEach(function(g){
+      if(!map[g.name]) map[g.name]={name:g.name,team:m.b,goles:0,minutes:[]};
+      map[g.name].goles++;
+      map[g.name].minutes.push(g.minute);
+    });
+  });
+  return Object.values(map).sort(function(a,b){return b.goles-a.goles;});
+}
+
+// Combinar historico + 2026
+function buildCombinedGoals(){
+  var goals2026 = build2026Goals();
+  var combined = HIST_GOALS_BASE.map(function(g){return Object.assign({},g,{era:g.era});});
+
+  // Agregar o sumar goles 2026 a jugadores que ya estan en historico
+  goals2026.forEach(function(g26){
+    var existing = combined.find(function(h){return h.name===g26.name;});
+    if(existing){
+      // Ya estaba (Messi, CR7, etc.) - sumar goles 2026
+      existing.goles += g26.goles;
+      existing.años = existing.años.split('-')[0] + '-2026';
+    } else {
+      // Nuevo goleador del 2026
+      var tf = TF[g26.team]||{c:['#aaa','#ddd','#aaa'],d:'h'};
+      combined.push({
+        name:g26.name,
+        team:g26.team,
+        f:tf.c,
+        d:tf.d,
+        goles:g26.goles,
+        años:'2026',
+        era:'2026',
+        av:'#E53935',
+        live:true,
+        minutes:g26.minutes
+      });
+    }
+  });
+
+  return combined.sort(function(a,b){return b.goles-a.goles;});
+}
+
 function renderChampList(filter){
   var items=filter==='todos'?HIST_CHAMPS:HIST_CHAMPS.filter(function(d){return d.c===filter;});
   document.getElementById('champList').innerHTML=items.map(function(d,i){
@@ -246,21 +291,40 @@ function renderChampList(filter){
 }
 
 function renderGoalHistList(filter){
-  var sorted=HIST_GOALS.slice().sort(function(a,b){return b.goles-a.goles;});
-  var items=filter==='todos'?sorted:sorted.filter(function(d){return d.era===filter;});
+  var all = buildCombinedGoals();
+  var items;
+  if(filter==='todos') items=all;
+  else if(filter==='2026') items=all.filter(function(d){return d.era==='2026'||d.años.includes('2026');});
+  else items=all.filter(function(d){return d.era===filter;});
+
   var max=items.length>0?items[0].goles:1;
   var avatarColors=['#0B369D','#E53935','#2e7d32','#c8922a','#6b7aaa'];
+
   document.getElementById('goalHistList').innerHTML=items.map(function(g,i){
     var cls=i===0?'rp1':i===1?'rp2':i===2?'rp3':'rpx';
-    var era=g.era==='moderno'?{bg:'#e3f2fd',c:'#1565c0',t:'2000+'}:g.era==='clasico'?{bg:'#e8f5e9',c:'#2e7d32',t:'1990s'}:{bg:'#fff8e1',c:'#c8922a',t:'Clasico'};
+    var era;
+    if(g.era==='2026'||g.años==='2026'){
+      era={bg:'#e8f5e9',c:'#2e7d32',t:'2026 🔴'};
+    } else if(g.era==='moderno'){
+      era={bg:'#e3f2fd',c:'#1565c0',t:'2000+'};
+    } else if(g.era==='clasico'){
+      era={bg:'#fff3e0',c:'#e65100',t:'1990s'};
+    } else {
+      era={bg:'#fff8e1',c:'#c8922a',t:'Clasico'};
+    }
     var initials=g.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('');
     var pct=Math.round(g.goles/max*100);
+    var minutesStr='';
+    if(g.minutes && g.minutes.length>0){
+      minutesStr='<div style="font-size:10px;color:var(--vm);margin-top:2px">'+g.minutes.slice(0,5).join("' ")+"'</div>";
+    }
     return '<div class="goal-hist-row">'
       +'<div class="goal-hist-pos '+cls+'">'+(i+1)+'</div>'
       +'<div class="goal-hist-avatar" style="background:'+(g.av||avatarColors[i%5])+'">'+initials+'</div>'
       +'<div class="goal-hist-info">'
         +'<div class="goal-hist-name">'+g.name+' <span class="era-badge" style="background:'+era.bg+';color:'+era.c+'">'+era.t+'</span></div>'
-        +'<div class="goal-hist-sub">'+FH(g.f,g.d,16,11)+' '+g.team+' &middot; '+g.años+'</div>'
+        +'<div class="goal-hist-sub">'+FH(g.f,g.d,16,11)+' '+g.team+'&nbsp;&middot;&nbsp;'+g.años+'</div>'
+        +minutesStr
         +'<div style="margin-top:4px;width:100px;height:3px;background:var(--vg2);border-radius:2px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,#0B369D,#E53935);border-radius:2px"></div></div>'
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
@@ -286,7 +350,7 @@ function renderChampRanking(){
       +FH(entry.f,entry.d,22,15)
       +'<span style="flex:1;font-size:12px;font-weight:700;color:var(--vt);margin-left:6px">'+c+'</span>'
       +'<div class="rank-bar-w"><div class="rank-bar-f" style="width:'+pct+'%"></div></div>'
-      +'<span style="font-size:14px;font-weight:900;color:#0B369D;min-width:36px;text-align:right">'+n+' 🏆</span>'
+      +'<span style="font-size:14px;font-weight:900;color:#0B369D;min-width:36px;text-align:right">'+n+' \uD83C\uDFC6</span>'
       +'</div>';
   }).join('');
 }
@@ -330,37 +394,35 @@ function renderCampeones(){
 """
 
 if 'renderCampeones' in html:
-    print("JS campeones ya existe, saltando.")
+    # Reemplazar JS existente con la version nueva
+    start = html.find('// ============================================================\n// CAMPEONES HISTORICOS')
+    end   = html.find('\nfunction renderCampeones(){', start)
+    end2  = html.find('\n}\n', end) + 3
+    if start > 0 and end > 0:
+        html = html[:start] + CHAMP_JS.strip() + '\n' + html[end2:]
+        print("JS campeones ACTUALIZADO OK")
+    else:
+        print("JS campeones ya existe pero no se pudo reemplazar automaticamente")
 else:
-    # Insert before the last </script>
     last_script = html.rfind('</script>')
     if last_script != -1:
         html = html[:last_script] + CHAMP_JS + '\n' + html[last_script:]
         print("JS campeones agregado OK")
-    else:
-        print("WARNING: </script> no encontrado")
 
-# ─────────────────────────────────────────────
-# 5. showPage(): agregar llamada a renderCampeones
-# ─────────────────────────────────────────────
+# showPage hook
 OLD_SHOW = "if(id==='miequipo')renderMyTeam();"
 NEW_SHOW = "if(id==='miequipo')renderMyTeam();\n  if(id==='campeones')renderCampeones();"
 
 if "if(id==='campeones')" in html:
-    print("showPage campeones ya existe, saltando.")
+    print("showPage campeones ya existe OK")
 elif OLD_SHOW in html:
     html = html.replace(OLD_SHOW, NEW_SHOW, 1)
     print("showPage campeones agregado OK")
 else:
-    print("WARNING: showPage hook no encontrado - revisar manualmente")
+    print("WARNING: showPage hook no encontrado")
 
-# ─────────────────────────────────────────────
-# Guardar
-# ─────────────────────────────────────────────
 with open(SRC, 'w', encoding='utf-8') as f:
     f.write(html)
 
-lines = html.count('\n')
-size  = len(html)
-print(f"\nDone! {lines} lineas, {size} bytes -> {SRC}")
+print(f"\nDone! {html.count(chr(10))} lineas -> {SRC}")
 print("Ahora correr: python3 build.py")
