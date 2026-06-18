@@ -6,6 +6,8 @@ on:
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -21,9 +23,11 @@ jobs:
       - name: Generar HTML
         run: python3 build.py
 
-      - name: Deploy a Netlify
-        env:
-          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+      - name: Publicar en GitHub Pages
         run: |
-          npm install -g netlify-cli
-          netlify deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=a6fe657d-d003-4e22-a624-b579f0541d08
+          cp dist/index.html index.html
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add index.html
+          git commit -m "Auto-update $(date '+%Y-%m-%d %H:%M')" || echo "Sin cambios"
+          git push
