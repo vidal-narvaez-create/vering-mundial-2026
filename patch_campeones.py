@@ -210,7 +210,7 @@ const HIST_GOALS_BASE=[
 
 const HIST_RECORDS=[
   {icon:'⚽',title:'Más goles en un Mundial',desc:'Just Fontaine — 13 goles · Francia 1958',color:'#e8f5e9',tc:'#2e7d32'},
-  {icon:'🏆',title:'Más títulos como jugador',desc:'Pelé — 3 copas (1958, 1962, 1970)',color:'#fff8e1',tc:'#c8922a'},
+  {icon:'&#x1F3C6;',title:'Más títulos como jugador',desc:'Pelé — 3 copas (1958, 1962, 1970)',color:'#fff8e1',tc:'#c8922a'},
   {icon:'👑',title:'Más mundiales jugados',desc:'Lothar Matthäus — 5 torneos (1982-1998)',color:'#e3f2fd',tc:'#1565c0'},
   {icon:'⚡',title:'Gol más rápido',desc:'Hakan Sükür — 11 seg · Turquía vs Corea 2002',color:'#fce4ec',tc:'#c62828'},
   {icon:'📊',title:'Más partidos ganados (país)',desc:'Brasil — 76 victorias en Mundiales',color:'#e8f5e9',tc:'#2e7d32'},
@@ -350,7 +350,7 @@ function renderChampRanking(){
       +FH(entry.f,entry.d,22,15)
       +'<span style="flex:1;font-size:12px;font-weight:700;color:var(--vt);margin-left:6px">'+c+'</span>'
       +'<div class="rank-bar-w"><div class="rank-bar-f" style="width:'+pct+'%"></div></div>'
-      +'<span style="font-size:14px;font-weight:900;color:#0B369D;min-width:36px;text-align:right">'+n+' \uD83C\uDFC6</span>'
+      +'<span style="font-size:14px;font-weight:900;color:#0B369D;min-width:36px;text-align:right">'+n+' &#x1F3C6;</span>'
       +'</div>';
   }).join('');
 }
