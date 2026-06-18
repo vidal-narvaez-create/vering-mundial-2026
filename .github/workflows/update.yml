@@ -22,6 +22,4 @@ jobs:
         run: python3 build.py
 
       - name: Deploy a Netlify
-        env:
-          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
-        run: npx --yes netlify-cli deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=a6fe657d-d003-4e22-a624-b579f0541d08
+        run: npx --yes netlify-cli deploy --prod --dir=./dist --auth=${{ secrets.NETLIFY_TOKEN }} --site=a6fe657d-d003-4e22-a624-b579f0541d08
