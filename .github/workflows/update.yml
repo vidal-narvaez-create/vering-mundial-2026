@@ -22,11 +22,8 @@ jobs:
         run: python3 build.py
 
       - name: Deploy a Netlify
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './dist'
-          production-branch: main
-          production-deploy: true
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --prod --dir=./dist --auth=$NETLIFY_TOKEN --site=a6fe657d-d003-4e22-a624-b579f0541d08
