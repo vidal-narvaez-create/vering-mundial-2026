@@ -11,18 +11,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
       - name: Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
       - name: Patch Campeones
         run: python3 patch_campeones.py
-
+      - name: Patch Destacado
+        run: python3 patch_destacado.py
       - name: Generar HTML
         run: python3 build.py
-
       - name: Publicar en GitHub Pages
         run: |
           cp dist/index.html index.html
