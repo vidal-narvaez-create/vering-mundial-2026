@@ -30,8 +30,11 @@ NAME={
 ROUND_ES = {
     'Round of 32': 'Dieciseisavos',
     'Round of 16': 'Octavos',
+    'Quarter-final': 'Cuartos',
     'Quarter-Finals': 'Cuartos',
+    'Semi-final': 'Semifinales',
     'Semi-Finals': 'Semifinales',
+    'Match for third place': 'Tercer Puesto',
     'Third-Place Match': 'Tercer Puesto',
     'Final': 'Final',
 }
