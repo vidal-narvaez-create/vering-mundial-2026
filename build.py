@@ -175,4 +175,3 @@ with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(result)
 
 print(f'\nListo! {jugados} jugados · hora PY (+4) · dist/index.html generado')
-
