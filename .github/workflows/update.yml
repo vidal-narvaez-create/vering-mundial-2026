@@ -20,9 +20,7 @@ jobs:
       - name: Patch Destacado
         run: python3 patch_destacado.py
       - name: Patch Emparejamiento
-        run: python3 patch_emparejamiento.py
-      - name: Patch Bracket
-        run: python3 patch_bracket.py
+        run: python3 patch_emparejamiento_v2.py
       - name: Generar HTML
         run: python3 build.py
       - name: Publicar en GitHub Pages
