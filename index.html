@@ -3100,73 +3100,60 @@ function empRenderMatchBox(matchNo, data, extraClass){
 
 // ============================================================
 // EMPAREJAMIENTO V2 - AUTOMATICO desde REAL_MATCHES
-// Lee los 104 partidos directamente, sin datos hardcodeados
 // ============================================================
-
 function empGetKOMatches(){
-  // Filtrar partidos eliminatorios de REAL_MATCHES
-  var stages = {
-    r32: [], r16: [], qf: [], sf: [], tp: null, final: null
-  };
+  var stages = {r32:[],r16:[],qf:[],sf:[],tp:null,final:null};
   REAL_MATCHES.forEach(function(m){
-    var s = m.stage || '';
-    if(s === 'Dieciseisavos') stages.r32.push(m);
-    else if(s === 'Octavos') stages.r16.push(m);
-    else if(s === 'Cuartos') stages.qf.push(m);
-    else if(s === 'Semifinales') stages.sf.push(m);
-    else if(s === 'Tercer Puesto') stages.tp = m;
-    else if(s === 'Final') stages.final = m;
+    var s = m.stage||'';
+    if(s==='Dieciseisavos') stages.r32.push(m);
+    else if(s==='Octavos') stages.r16.push(m);
+    else if(s==='Cuartos') stages.qf.push(m);
+    else if(s==='Semifinales') stages.sf.push(m);
+    else if(s==='Tercer Puesto') stages.tp=m;
+    else if(s==='Final') stages.final=m;
   });
-  // Ordenar por num de partido
-  function byNum(a,b){ return (a.num||0)-(b.num||0); }
-  stages.r32.sort(byNum);
-  stages.r16.sort(byNum);
-  stages.qf.sort(byNum);
-  stages.sf.sort(byNum);
+  function byNum(a,b){return (a.num||0)-(b.num||0);}
+  stages.r32.sort(byNum); stages.r16.sort(byNum);
+  stages.qf.sort(byNum); stages.sf.sort(byNum);
   return stages;
 }
 
-function empIsLive(m){
-  if(m.ga !== null || !m.dateRaw || !m.time) return false;
-  var now = new Date();
-  var utc = now.getTime() + (now.getTimezoneOffset()*60000);
-  var py = new Date(utc - (4*3600000));
-  var todayRaw = py.getFullYear()+'-'+String(py.getMonth()+1).padStart(2,'0')+'-'+String(py.getDate()).padStart(2,'0');
-  if(m.dateRaw !== todayRaw) return false;
-  var parts = m.time.split(':');
-  var startMin = parseInt(parts[0])*60 + parseInt(parts[1]);
-  var nowMin = py.getHours()*60 + py.getMinutes();
-  var diff = nowMin - startMin;
-  return diff >= 0 && diff <= 150;
+function empIsLiveM(m){
+  if(m.ga!==null||!m.dateRaw||!m.time) return false;
+  var now=new Date(), utc=now.getTime()+(now.getTimezoneOffset()*60000);
+  var py=new Date(utc-(4*3600000));
+  var todayRaw=py.getFullYear()+'-'+String(py.getMonth()+1).padStart(2,'0')+'-'+String(py.getDate()).padStart(2,'0');
+  if(m.dateRaw!==todayRaw) return false;
+  var parts=m.time.split(':');
+  var startMin=parseInt(parts[0])*60+parseInt(parts[1]);
+  var nowMin=py.getHours()*60+py.getMinutes();
+  var diff=nowMin-startMin;
+  return diff>=0&&diff<=150;
 }
 
-function empRenderMatchAuto(m, stageLabel){
+function empRenderMatchAuto(m){
   if(!m) return '<div class="emp-match tbd"><div style="font-size:10px;color:#5E6FA8;padding:4px">Por definir</div></div>';
-  var isPy = (m.a === 'Paraguay' || m.b === 'Paraguay');
-  var isLive = empIsLive(m);
-  var hasResult = m.ga !== null && m.gb !== null;
-  var isTbd = !m.a || !m.b || m.a.match(/^[W2]\d+/) || m.b.match(/^[W2][0-9]+/);
-  var cls = 'emp-match' + (isPy?' py':(isLive?' live':(isTbd?' tbd':'')));
-  var nameA = m.a || 'Por definir';
-  var nameB = m.b || 'Por definir';
-  // Traducir placeholders
-  nameA = nameA.replace(/^W([0-9]+)$/, 'Gan. M$1').replace(/^L([0-9]+)$/, 'Per. M$1');
-  nameB = nameB.replace(/^W(\d+)$/, 'Gan. M$1').replace(/^L(\d+)$/, 'Per. M$1');
+  var isPy=(m.a==='Paraguay'||m.b==='Paraguay');
+  var isLive=empIsLiveM(m);
+  var hasResult=m.ga!==null&&m.gb!==null;
+  var nameA=m.a||'Por definir'; var nameB=m.b||'Por definir';
+  nameA=nameA.replace(/^W([0-9]+)$/,'Gan. M$1').replace(/^L([0-9]+)$/,'Per. M$1');
+  nameB=nameB.replace(/^W([0-9]+)$/,'Gan. M$1').replace(/^L([0-9]+)$/,'Per. M$1');
   function flag(name){
     if(typeof TF==='undefined'||typeof FH==='undefined') return '';
-    var tf = TF[name]; if(!tf) return '';
-    return FH(tf.c, tf.d, 16, 11);
+    var tf=TF[name]; if(!tf) return ''; return FH(tf.c,tf.d,16,11);
   }
-  var winA = hasResult && m.ga > m.gb;
-  var winB = hasResult && m.gb > m.ga;
-  var colorA = hasResult?(winA?'#0a1f6e':'#999'):'#1a2b5c';
-  var colorB = hasResult?(winB?'#0a1f6e':'#999'):'#1a2b5c';
-  var fwA = winA?'900':'600'; var fwB = winB?'900':'600';
+  var winA=hasResult&&m.ga>m.gb; var winB=hasResult&&m.gb>m.ga;
+  var colorA=hasResult?(winA?'#0a1f6e':'#999'):'#1a2b5c';
+  var colorB=hasResult?(winB?'#0a1f6e':'#999'):'#1a2b5c';
+  var fwA=winA?'900':'600'; var fwB=winB?'900':'600';
   if(!hasResult){colorA='#1a2b5c';colorB='#1a2b5c';fwA='700';fwB='700';}
-  var scoreA = hasResult ? '<span style="font-size:11px;font-weight:900;color:#E53935;flex-shrink:0;padding:0 4px">'+m.ga+'</span>' : '';
-  var scoreB = hasResult ? '<span style="font-size:11px;font-weight:900;color:#E53935;flex-shrink:0;padding:0 4px">'+m.gb+'</span>' : '';
-  var liveTag = isLive ? '<span style="font-size:8px;background:#FF9800;color:#fff;padding:1px 4px;border-radius:3px;margin-left:4px">EN VIVO</span>' : '';
-  return '<div class="'+cls+'">'
+  var border=isPy?'1.5px solid #E53935':(isLive?'1.5px solid #FF9800':(hasResult?'1px solid #DCE0EC':'1px dashed #C7D2F0'));
+  var bg=isPy?'#FFF6F5':(isLive?'#FFF8E1':(hasResult?'#fff':'#F0F4FF'));
+  var liveTag=isLive?'<span style="font-size:8px;background:#FF9800;color:#fff;padding:1px 4px;border-radius:3px;margin-left:4px">EN VIVO</span>':'';
+  var scoreA=hasResult?'<span style="font-size:11px;font-weight:900;color:#E53935;flex-shrink:0;padding:0 4px">'+m.ga+'</span>':'';
+  var scoreB=hasResult?'<span style="font-size:11px;font-weight:900;color:#E53935;flex-shrink:0;padding:0 4px">'+m.gb+'</span>':'';
+  return '<div class="emp-match" style="background:'+bg+';border:'+border+';margin-bottom:6px">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:2px 0">'
       +'<div style="display:flex;align-items:center;gap:4px;flex:1;overflow:hidden">'+flag(nameA)
         +'<span style="font-size:12px;font-weight:'+fwA+';color:'+colorA+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nameA+'</span>'+liveTag
@@ -3177,84 +3164,45 @@ function empRenderMatchAuto(m, stageLabel){
         +'<span style="font-size:12px;font-weight:'+fwB+';color:'+colorB+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nameB+'</span>'
       +'</div>'+scoreB
     +'</div>'
-    +'<div class="emp-match-meta">'+(m.num?'M'+m.num:'')+(m.date?' · '+m.date:'')+'</div>'
+    +'<div style="font-size:9px;color:#A6ACC4;margin-top:3px">'+(m.num?'M'+m.num:'')+(m.date?' · '+m.date:'')+'</div>'
     +'</div>';
 }
 
 function renderEmparejamiento(){
-  var container = document.getElementById('empBracketContainer');
-  var subtitle = document.getElementById('empSubtitle');
+  var container=document.getElementById('empBracketContainer');
+  var subtitle=document.getElementById('empSubtitle');
   if(!container) return;
-
-  var stages = empGetKOMatches();
-  var jugados = stages.r32.filter(function(m){return m.ga!==null;}).length
-              + stages.r16.filter(function(m){return m.ga!==null;}).length
-              + stages.qf.filter(function(m){return m.ga!==null;}).length
-              + stages.sf.filter(function(m){return m.ga!==null;}).length;
-
+  var stages=empGetKOMatches();
+  var jugados=stages.r32.filter(function(m){return m.ga!==null;}).length
+    +stages.r16.filter(function(m){return m.ga!==null;}).length
+    +stages.qf.filter(function(m){return m.ga!==null;}).length
+    +stages.sf.filter(function(m){return m.ga!==null;}).length;
   if(subtitle){
-    if(jugados > 0){
-      subtitle.textContent = 'Resultados en tiempo real · ' + jugados + ' partidos eliminatorios jugados';
-    } else {
-      subtitle.textContent = 'Se completa automaticamente segun resultados oficiales';
-    }
+    subtitle.textContent=jugados>0?'Resultados en tiempo real · '+jugados+' partidos eliminatorios jugados':'Se completa automaticamente segun resultados oficiales';
   }
-
-  var html = '<div class="emp-bracket-grid">';
-
-  // DIECISEISAVOS
-  html += '<div><div class="emp-stage-label">DIECISEISAVOS</div>';
-  if(stages.r32.length > 0){
-    stages.r32.forEach(function(m){ html += empRenderMatchAuto(m); });
-  } else {
-    for(var i=0;i<16;i++) html += empRenderMatchAuto(null);
-  }
-  html += '</div>';
-
-  // OCTAVOS
-  html += '<div><div class="emp-stage-label">OCTAVOS</div>';
-  if(stages.r16.length > 0){
-    stages.r16.forEach(function(m){ html += empRenderMatchAuto(m); });
-  } else {
-    for(var i=0;i<8;i++) html += empRenderMatchAuto(null);
-  }
-  html += '</div>';
-
-  // CUARTOS
-  html += '<div><div class="emp-stage-label">CUARTOS</div>';
-  if(stages.qf.length > 0){
-    stages.qf.forEach(function(m){ html += empRenderMatchAuto(m); });
-  } else {
-    for(var i=0;i<4;i++) html += empRenderMatchAuto(null);
-  }
-  html += '</div>';
-
-  // SEMIS + TERCER PUESTO
-  html += '<div><div class="emp-stage-label">SEMIFINALES</div>';
-  if(stages.sf.length > 0){
-    stages.sf.forEach(function(m){ html += empRenderMatchAuto(m); });
-  } else {
-    html += empRenderMatchAuto(null);
-    html += empRenderMatchAuto(null);
-  }
-  html += '<div style="margin-top:14px"><div class="emp-stage-label">TERCER PUESTO</div>';
-  html += empRenderMatchAuto(stages.tp);
-  html += '</div></div>';
-
-  // FINAL
-  html += '<div><div class="emp-stage-label">FINAL</div>';
-  if(stages.final){
-    html += empRenderMatchAuto(stages.final);
-  } else {
-    html += '<div class="emp-final-box"><div class="lbl">19/07 · MetLife Stadium</div><div class="team">Por definir</div><div class="team">Por definir</div></div>';
-  }
-  html += '</div>';
-
-  html += '</div>';
-  container.innerHTML = html;
-  // Refrescar cada 60 segundos
-  setTimeout(renderEmparejamiento, 60000);
+  var html='<div class="emp-bracket-grid">';
+  html+='<div><div class="emp-stage-label">DIECISEISAVOS</div>';
+  (stages.r32.length>0?stages.r32:Array(16).fill(null)).forEach(function(m){html+=empRenderMatchAuto(m);});
+  html+='</div>';
+  html+='<div><div class="emp-stage-label">OCTAVOS</div>';
+  (stages.r16.length>0?stages.r16:Array(8).fill(null)).forEach(function(m){html+=empRenderMatchAuto(m);});
+  html+='</div>';
+  html+='<div><div class="emp-stage-label">CUARTOS</div>';
+  (stages.qf.length>0?stages.qf:Array(4).fill(null)).forEach(function(m){html+=empRenderMatchAuto(m);});
+  html+='</div>';
+  html+='<div><div class="emp-stage-label">SEMIFINALES</div>';
+  (stages.sf.length>0?stages.sf:Array(2).fill(null)).forEach(function(m){html+=empRenderMatchAuto(m);});
+  html+='<div style="margin-top:14px"><div class="emp-stage-label">TERCER PUESTO</div>';
+  html+=empRenderMatchAuto(stages.tp);
+  html+='</div></div>';
+  html+='<div><div class="emp-stage-label">FINAL</div>';
+  if(stages.final){html+=empRenderMatchAuto(stages.final);}
+  else{html+='<div class="emp-final-box"><div class="lbl">19/07 · MetLife Stadium</div><div class="team">Por definir</div><div class="team">Por definir</div></div>';}
+  html+='</div></div>';
+  container.innerHTML=html;
+  setTimeout(renderEmparejamiento,60000);
 }
+
 
 </script>
 </body>
