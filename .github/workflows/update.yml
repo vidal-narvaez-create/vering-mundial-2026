@@ -20,6 +20,8 @@ jobs:
       - name: Patch Destacado
         run: python3 patch_destacado.py
       - name: Patch Emparejamiento
+        run: python3 patch_emparejamiento.py
+      - name: Patch Emparejamiento V2
         run: python3 patch_emparejamiento_v2.py
       - name: Generar HTML
         run: python3 build.py
