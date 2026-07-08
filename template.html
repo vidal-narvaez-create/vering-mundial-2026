@@ -816,11 +816,15 @@ async function fetchWithProxies(url){
   throw new Error('Todos los proxies fallaron: '+errors.join(' | '));
 }
 
+const ROUND_ES_JS={'Round of 32':'Dieciseisavos','Round of 16':'Octavos','Quarter-final':'Cuartos','Quarter-Finals':'Cuartos','Semi-final':'Semifinales','Semi-Finals':'Semifinales','Match for third place':'Tercer Puesto','Third-Place Match':'Tercer Puesto','Final':'Final'};
 function processApiData(d){
-  const gm=(d.matches||[]).filter(m=>(m.group||'').startsWith('Group'));
-  WC_MATCHES=gm.map((m,i)=>{
+  // Incluye TODOS los partidos (grupos + eliminatorias), igual que build.py
+  const allM=(d.matches||[]);
+  WC_MATCHES=allM.map((m,i)=>{
     const sc=m.score?.ft;
-    return {id:i,g:m.group.replace('Group ',''),a:esN(m.team1),b:esN(m.team2),
+    const isGroup=(m.group||'').startsWith('Group');
+    const stage=isGroup?'group':(ROUND_ES_JS[m.round||'']||m.round||'');
+    return {id:i,g:isGroup?m.group.replace('Group ',''):'',stage:stage,a:esN(m.team1),b:esN(m.team2),
       date:fD(m.date),dateRaw:m.date||'',time:fT(m.time||''),city:m.ground||'',
       ga:sc?sc[0]:null,gb:sc?sc[1]:null,
       goals1:(m.goals1||[]).map(g=>({name:g.name,minute:g.minute})),
@@ -828,7 +832,7 @@ function processApiData(d){
       round:m.round||''};
   });
   const grps={};
-  WC_MATCHES.forEach(m=>{
+  WC_MATCHES.filter(m=>m.stage==='group').forEach(m=>{
     if(!grps[m.g])grps[m.g]=[];
     if(!grps[m.g].includes(m.a))grps[m.g].push(m.a);
     if(!grps[m.g].includes(m.b))grps[m.g].push(m.b);
@@ -922,7 +926,7 @@ function renderControl(){
       <div class="klbl">Partidos Jugados</div><div class="kval">${played}</div><div class="ksub">de ${WC_MATCHES.length} · ${Math.round(played/WC_MATCHES.length*100)}%</div>
       <span class="kcard-hint">↗ ver detalle</span></div>
     <div class="kcard kr" onclick="openKpiModal('goles')" title="Ver estadísticas de goles">
-      <div class="klbl">Goles</div><div class="kval red">${goals}</div><div class="ksub">en fase de grupos</div>
+      <div class="klbl">Goles</div><div class="kval red">${goals}</div><div class="ksub">en el torneo</div>
       <span class="kcard-hint">↗ ver goleadores</span></div>
     <div class="kcard kg" onclick="openKpiModal('promedio')">
       <div class="klbl">Promedio</div><div class="kval">${avg}</div><div class="ksub">goles por partido</div>
