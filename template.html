@@ -1402,9 +1402,10 @@ function setSc(id,side,val){
 // ============================================================
 function renderClassif(){
   let played=0,goals=0;
-  WC_MATCHES.forEach(m=>{const s=getScore(m);if(s.ga!==null){played++;goals+=s.ga+s.gb;}});
+  const groupMs=WC_MATCHES.filter(m=>(m.stage||'group')==='group');
+  groupMs.forEach(m=>{const s=getScore(m);if(s.ga!==null){played++;goals+=s.ga+s.gb;}});
   document.getElementById('statsGrid').innerHTML=`
-    <div class="scard"><div class="slbl">Partidos</div><div class="sval">${played}</div><div class="ssub">de ${WC_MATCHES.length}</div></div>
+    <div class="scard"><div class="slbl">Partidos</div><div class="sval">${played}</div><div class="ssub">de ${groupMs.length}</div></div>
     <div class="scard"><div class="slbl">Goles</div><div class="sval">${goals}</div><div class="ssub">en grupos</div></div>
     <div class="scard"><div class="slbl">Promedio</div><div class="sval">${played>0?(goals/played).toFixed(1):0}</div><div class="ssub">por partido</div></div>
     <div class="scard"><div class="slbl">Grupos</div><div class="sval">${Object.keys(WC_GROUPS).length}</div><div class="ssub">A–L</div></div>`;
