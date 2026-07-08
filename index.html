@@ -1039,11 +1039,15 @@ async function fetchWithProxies(url){
   throw new Error('Todos los proxies fallaron: '+errors.join(' | '));
 }
 
+const ROUND_ES_JS={'Round of 32':'Dieciseisavos','Round of 16':'Octavos','Quarter-final':'Cuartos','Quarter-Finals':'Cuartos','Semi-final':'Semifinales','Semi-Finals':'Semifinales','Match for third place':'Tercer Puesto','Third-Place Match':'Tercer Puesto','Final':'Final'};
 function processApiData(d){
-  const gm=(d.matches||[]).filter(m=>(m.group||'').startsWith('Group'));
-  WC_MATCHES=gm.map((m,i)=>{
+  // Incluye TODOS los partidos (grupos + eliminatorias), igual que build.py
+  const allM=(d.matches||[]);
+  WC_MATCHES=allM.map((m,i)=>{
     const sc=m.score?.ft;
-    return {id:i,g:m.group.replace('Group ',''),a:esN(m.team1),b:esN(m.team2),
+    const isGroup=(m.group||'').startsWith('Group');
+    const stage=isGroup?'group':(ROUND_ES_JS[m.round||'']||m.round||'');
+    return {id:i,g:isGroup?m.group.replace('Group ',''):'',stage:stage,a:esN(m.team1),b:esN(m.team2),
       date:fD(m.date),dateRaw:m.date||'',time:fT(m.time||''),city:m.ground||'',
       ga:sc?sc[0]:null,gb:sc?sc[1]:null,
       goals1:(m.goals1||[]).map(g=>({name:g.name,minute:g.minute})),
@@ -1051,7 +1055,7 @@ function processApiData(d){
       round:m.round||''};
   });
   const grps={};
-  WC_MATCHES.forEach(m=>{
+  WC_MATCHES.filter(m=>m.stage==='group').forEach(m=>{
     if(!grps[m.g])grps[m.g]=[];
     if(!grps[m.g].includes(m.a))grps[m.g].push(m.a);
     if(!grps[m.g].includes(m.b))grps[m.g].push(m.b);
@@ -1145,7 +1149,7 @@ function renderControl(){
       <div class="klbl">Partidos Jugados</div><div class="kval">${played}</div><div class="ksub">de ${WC_MATCHES.length} · ${Math.round(played/WC_MATCHES.length*100)}%</div>
       <span class="kcard-hint">↗ ver detalle</span></div>
     <div class="kcard kr" onclick="openKpiModal('goles')" title="Ver estadísticas de goles">
-      <div class="klbl">Goles</div><div class="kval red">${goals}</div><div class="ksub">en fase de grupos</div>
+      <div class="klbl">Goles</div><div class="kval red">${goals}</div><div class="ksub">en el torneo</div>
       <span class="kcard-hint">↗ ver goleadores</span></div>
     <div class="kcard kg" onclick="openKpiModal('promedio')">
       <div class="klbl">Promedio</div><div class="kval">${avg}</div><div class="ksub">goles por partido</div>
@@ -2394,10 +2398,11 @@ function renderCampeones(){
 
 
 // ============================================================
-// PARTIDO DESTACADO DEL DIA (splash)
-// Prioridad: 1) En vivo  2) Paraguay hoy  3) Top/primero del dia  4) Fallback Paraguay  5) Fallback general
+// PARTIDO DESTACADO DEL DIA (splash) - v3
+// Prioridad: 1)En vivo 2)KO del dia 3)Paraguay hoy 4)Top team 5)Fallback
 // ============================================================
-const TOP_TEAMS_DESTACADO=['Brasil','Argentina','Francia','Alemania','España','Inglaterra','Portugal','Países Bajos'];
+const TOP_TEAMS_DESTACADO=['Brasil','Argentina','Francia','Alemania','España','Inglaterra','Portugal','Países Bajos','Marruecos','Noruega','Bélgica','Suiza'];
+const KO_STAGES=['Dieciseisavos','Octavos','Cuartos','Semifinales','Tercer Puesto','Final'];
 
 function pyTodayRaw(){
   var now=new Date();
@@ -2426,12 +2431,21 @@ function getPartidoDestacado(){
   var todayRaw=pyTodayRaw();
   var todayMatches=REAL_MATCHES.filter(function(m){return m.dateRaw===todayRaw;});
 
+  // 1) En vivo
   var live=REAL_MATCHES.find(function(m){return isMatchLive(m);});
   if(live) return {match:live,label:'🔴 EN VIVO',tag:'live'};
 
+  // 2) Partido KO del dia (cuartos, semis, final) - prioritario sobre Paraguay
+  var koToday=todayMatches.filter(function(m){return KO_STAGES.indexOf(m.stage||'')!==-1;});
+  if(koToday.length>0){
+    return {match:koToday[0],label:'PARTIDO DESTACADO DEL DÍA',tag:'ko'};
+  }
+
+  // 3) Paraguay juega hoy
   var pyHoy=todayMatches.find(function(m){return m.a==='Paraguay'||m.b==='Paraguay';});
   if(pyHoy) return {match:pyHoy,label:'PARTIDO DE PARAGUAY · HOY',tag:'paraguay'};
 
+  // 4) Top team hoy
   if(todayMatches.length>0){
     var topM=todayMatches.find(function(m){
       return TOP_TEAMS_DESTACADO.indexOf(m.a)!==-1||TOP_TEAMS_DESTACADO.indexOf(m.b)!==-1;
@@ -2440,11 +2454,28 @@ function getPartidoDestacado(){
     return {match:pick,label:'PARTIDO DESTACADO DEL DÍA',tag:'destacado'};
   }
 
+  // 5) Proximo partido KO (dia de descanso sin partidos hoy: prioriza esto sobre resultados viejos)
+  var koUpcoming=REAL_MATCHES.filter(function(m){return m.ga===null&&KO_STAGES.indexOf(m.stage||'')!==-1;})
+    .sort(function(a,b){return (a.dateRaw||'').localeCompare(b.dateRaw||'');});
+  if(koUpcoming.length>0){
+    return {match:koUpcoming[0],label:'PRÓXIMO PARTIDO · '+(koUpcoming[0].stage||'ELIMINATORIA').toUpperCase(),tag:'next-ko'};
+  }
+
+  // 6) Ultimo resultado KO de Paraguay
+  var pyKOPlayed=REAL_MATCHES.filter(function(m){
+    return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null&&KO_STAGES.indexOf(m.stage||'')!==-1;
+  });
+  if(pyKOPlayed.length>0){
+    return {match:pyKOPlayed[pyKOPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
+  }
+
+  // 7) Ultimo resultado de Paraguay (cualquier fase)
   var pyPlayed=REAL_MATCHES.filter(function(m){return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null;});
   if(pyPlayed.length>0){
     return {match:pyPlayed[pyPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
   }
 
+  // 8) Fallback ultimo jugado
   var anyPlayed=REAL_MATCHES.filter(function(m){return m.ga!==null;});
   if(anyPlayed.length>0){
     return {match:anyPlayed[anyPlayed.length-1],label:'ÚLTIMO RESULTADO',tag:'last-any'};
