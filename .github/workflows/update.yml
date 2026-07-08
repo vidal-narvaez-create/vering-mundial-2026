@@ -25,6 +25,10 @@ jobs:
         run: python3 patch_emparejamiento_v2.py
       - name: Patch Fase Final
         run: python3 patch_fase_final.py
+      - name: Patch Bracket
+        run: python3 patch_bracket.py
+      - name: Patch Contadores
+        run: python3 patch_contadores.py
       - name: Generar HTML
         run: python3 build.py
       - name: Publicar en GitHub Pages
