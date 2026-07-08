@@ -71,7 +71,14 @@ function getPartidoDestacado(){
     return {match:pick,label:'PARTIDO DESTACADO DEL DÍA',tag:'destacado'};
   }
 
-  // 5) Ultimo resultado KO de Paraguay
+  // 5) Proximo partido KO (dia de descanso sin partidos hoy: prioriza esto sobre resultados viejos)
+  var koUpcoming=REAL_MATCHES.filter(function(m){return m.ga===null&&KO_STAGES.indexOf(m.stage||'')!==-1;})
+    .sort(function(a,b){return (a.dateRaw||'').localeCompare(b.dateRaw||'');});
+  if(koUpcoming.length>0){
+    return {match:koUpcoming[0],label:'PRÓXIMO PARTIDO · '+(koUpcoming[0].stage||'ELIMINATORIA').toUpperCase(),tag:'next-ko'};
+  }
+
+  // 6) Ultimo resultado KO de Paraguay
   var pyKOPlayed=REAL_MATCHES.filter(function(m){
     return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null&&KO_STAGES.indexOf(m.stage||'')!==-1;
   });
@@ -79,16 +86,10 @@ function getPartidoDestacado(){
     return {match:pyKOPlayed[pyKOPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
   }
 
-  // 6) Ultimo resultado de Paraguay (cualquier fase)
+  // 7) Ultimo resultado de Paraguay (cualquier fase)
   var pyPlayed=REAL_MATCHES.filter(function(m){return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null;});
   if(pyPlayed.length>0){
     return {match:pyPlayed[pyPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
-  }
-
-  // 7) Proximo partido KO
-  var koUpcoming=REAL_MATCHES.filter(function(m){return m.ga===null&&KO_STAGES.indexOf(m.stage||'')!==-1;});
-  if(koUpcoming.length>0){
-    return {match:koUpcoming[0],label:'PRÓXIMO PARTIDO ELIMINATORIO',tag:'next-ko'};
   }
 
   // 8) Fallback ultimo jugado
