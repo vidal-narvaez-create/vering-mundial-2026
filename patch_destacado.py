@@ -1,30 +1,25 @@
 """
 patch_destacado.py
-Ejecutar en la raiz del repo: python3 patch_destacado.py
-Lee template.html, reemplaza la logica del "Partido Destacado" del splash
-(antes: fijo en ultimo resultado de Paraguay) por logica dinamica:
-  1) Partido en vivo ahora
-  2) Partido de Paraguay hoy
-  3) Partido con equipo top hoy (o primero del dia)
-  4) Fallback: ultimo resultado jugado de Paraguay
-  5) Fallback final: ultimo resultado jugado de cualquier equipo
+Actualizado: prioridad correcta para fase eliminatoria
+1) En vivo -> 2) Cuartos/Semis/Final del dia -> 3) Paraguay -> 4) Top team -> 5) Fallback
 """
 import re, sys, os
 
 SRC = 'template.html'
 if not os.path.exists(SRC):
-    print(f"ERROR: {SRC} no encontrado. Ejecuta desde la raiz del repo.")
+    print(f"ERROR: {SRC} no encontrado.")
     sys.exit(1)
 
 with open(SRC, encoding='utf-8') as f:
     html = f.read()
 
-JS_DESTACADO = """
+JS_DESTACADO = '''
 // ============================================================
-// PARTIDO DESTACADO DEL DIA (splash)
-// Prioridad: 1) En vivo  2) Paraguay hoy  3) Top/primero del dia  4) Fallback Paraguay  5) Fallback general
+// PARTIDO DESTACADO DEL DIA (splash) - v3
+// Prioridad: 1)En vivo 2)KO del dia 3)Paraguay hoy 4)Top team 5)Fallback
 // ============================================================
-const TOP_TEAMS_DESTACADO=['Brasil','Argentina','Francia','Alemania','España','Inglaterra','Portugal','Países Bajos'];
+const TOP_TEAMS_DESTACADO=['Brasil','Argentina','Francia','Alemania','España','Inglaterra','Portugal','Países Bajos','Marruecos','Noruega','Bélgica','Suiza'];
+const KO_STAGES=['Dieciseisavos','Octavos','Cuartos','Semifinales','Tercer Puesto','Final'];
 
 function pyTodayRaw(){
   var now=new Date();
@@ -53,12 +48,21 @@ function getPartidoDestacado(){
   var todayRaw=pyTodayRaw();
   var todayMatches=REAL_MATCHES.filter(function(m){return m.dateRaw===todayRaw;});
 
+  // 1) En vivo
   var live=REAL_MATCHES.find(function(m){return isMatchLive(m);});
   if(live) return {match:live,label:'🔴 EN VIVO',tag:'live'};
 
+  // 2) Partido KO del dia (cuartos, semis, final) - prioritario sobre Paraguay
+  var koToday=todayMatches.filter(function(m){return KO_STAGES.indexOf(m.stage||'')!==-1;});
+  if(koToday.length>0){
+    return {match:koToday[0],label:'PARTIDO DESTACADO DEL DÍA',tag:'ko'};
+  }
+
+  // 3) Paraguay juega hoy
   var pyHoy=todayMatches.find(function(m){return m.a==='Paraguay'||m.b==='Paraguay';});
   if(pyHoy) return {match:pyHoy,label:'PARTIDO DE PARAGUAY · HOY',tag:'paraguay'};
 
+  // 4) Top team hoy
   if(todayMatches.length>0){
     var topM=todayMatches.find(function(m){
       return TOP_TEAMS_DESTACADO.indexOf(m.a)!==-1||TOP_TEAMS_DESTACADO.indexOf(m.b)!==-1;
@@ -67,11 +71,27 @@ function getPartidoDestacado(){
     return {match:pick,label:'PARTIDO DESTACADO DEL DÍA',tag:'destacado'};
   }
 
+  // 5) Ultimo resultado KO de Paraguay
+  var pyKOPlayed=REAL_MATCHES.filter(function(m){
+    return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null&&KO_STAGES.indexOf(m.stage||'')!==-1;
+  });
+  if(pyKOPlayed.length>0){
+    return {match:pyKOPlayed[pyKOPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
+  }
+
+  // 6) Ultimo resultado de Paraguay (cualquier fase)
   var pyPlayed=REAL_MATCHES.filter(function(m){return (m.a==='Paraguay'||m.b==='Paraguay')&&m.ga!==null;});
   if(pyPlayed.length>0){
     return {match:pyPlayed[pyPlayed.length-1],label:'ÚLTIMO RESULTADO · PARAGUAY',tag:'last-py'};
   }
 
+  // 7) Proximo partido KO
+  var koUpcoming=REAL_MATCHES.filter(function(m){return m.ga===null&&KO_STAGES.indexOf(m.stage||'')!==-1;});
+  if(koUpcoming.length>0){
+    return {match:koUpcoming[0],label:'PRÓXIMO PARTIDO ELIMINATORIO',tag:'next-ko'};
+  }
+
+  // 8) Fallback ultimo jugado
   var anyPlayed=REAL_MATCHES.filter(function(m){return m.ga!==null;});
   if(anyPlayed.length>0){
     return {match:anyPlayed[anyPlayed.length-1],label:'ÚLTIMO RESULTADO',tag:'last-any'};
@@ -108,36 +128,35 @@ function renderSplashDestacado(){
     +'<span class="sp-mvs">vs</span>'
     +'<span class="sp-mn" style="text-align:right">'+m.b+'</span>';
 }
-"""
+'''
 
 if 'function getPartidoDestacado' in html:
-    print("JS destacado ya existe, saltando insercion de funciones.")
+    # Reemplazar funcion existente
+    start = html.find('// ============================================================\n// PARTIDO DESTACADO')
+    if start == -1:
+        start = html.find('function pyTodayRaw')
+    end = html.find('\nrenderSplashDestacado();\nsetInterval', start)
+    if end == -1:
+        end = html.find('\nfunction renderSplashDestacado', start)
+        end2 = html.find('\n}\n', end) + 3
+        html = html[:start] + JS_DESTACADO.strip() + '\n' + html[end2:]
+    else:
+        html = html[:start] + JS_DESTACADO.strip() + '\n' + html[end:]
+    print("JS destacado ACTUALIZADO OK")
 else:
     last_script = html.rfind('</script>')
     if last_script != -1:
         html = html[:last_script] + JS_DESTACADO + '\n' + html[last_script:]
-        print("JS destacado agregado OK")
-    else:
-        print("WARNING: no se encontro </script> para insertar JS destacado")
-
-OLD_CALL_PATTERNS = [
-    r"document\.getElementById\('spMcRow'\)\.innerHTML\s*=\s*[^;]+;",
-]
-for pat in OLD_CALL_PATTERNS:
-    if re.search(pat, html):
-        html = re.sub(pat, "renderSplashDestacado();", html, count=1)
-        print("Llamada anterior a spMcRow reemplazada por renderSplashDestacado()")
+        print("JS destacado INSERTADO OK")
 
 if 'renderSplashDestacado();' not in html:
     last_script = html.rfind('</script>')
     if last_script != -1:
         html = html[:last_script] + "\nrenderSplashDestacado();\nsetInterval(renderSplashDestacado, 60000);\n" + html[last_script:]
-        print("Llamada inicial a renderSplashDestacado() agregada OK")
-else:
-    print("Llamada a renderSplashDestacado() ya presente")
+        print("Llamada a renderSplashDestacado() agregada OK")
 
 with open(SRC, 'w', encoding='utf-8') as f:
     f.write(html)
 
 print(f"\nDone! {html.count(chr(10))} lineas -> {SRC}")
-print("Ahora correr: python3 build.py")
+
